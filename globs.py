@@ -1,0 +1,2 @@
+cachedir = "cache"
+resultdir = "results"

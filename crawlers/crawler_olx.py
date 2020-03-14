@@ -1,12 +1,15 @@
 from crawlers.crawler import Crawler
+import os
+import utils
 import soupmaker
+import globs
 
 class CrawlerOlx(Crawler):
     pass
 
     numofpages = -1
     lastoffer = ""
-    cachefile = "cache/olxcache"
+    cachefile = os.path.join(globs.cachedir, "olxcache")
 
     def tofloor(self, intvalue):
         return 'floor_' + str(intvalue)
@@ -87,42 +90,31 @@ class CrawlerOlx(Crawler):
         
         return uniquelinks
     
-    def checkforfordon(self, soup):
-        
-        badwords = ["Fordon", "FORDON", "fordon", "Bajka", "BAJKA", "bajka"]
-        
+    def checkForLocations(self, soup):
         map = soup.find('a', {'href' : '#map'}) #otodom map
         if map:
             for content in map.contents:
-                if "Fordon" in content:
-                    print("Fordon Found")
+                if utils.checkForBlacklist(self.blacklist.locations, content):
                     return True
-        
+        return False
+
+    def checkForKeywords(self, soup):
         title = soup.find('div', {'class' : 'offer-titlebox'})
         if title:
-            for badword in badwords:
-                if badword in title.text:
-                    print("Fordon Found")
-                    return True
+            if utils.checkForBlacklist(self.blacklist.keywords, title.text):
+                return True
 
         desc = soup.find('section', {'class' : 'section-description'}) #otodom desc
         if desc:
             ps = desc.findAll('p')
             for p in ps:
-                for badword in badwords:
-                    if badword in p.text:
-                        print("Fordon Found")
-                        return True
+                if utils.checkForBlacklist(self.blacklist.keywords, p.text):
+                    return True
                         
         desc2 = soup.find('div', {'id' : 'textContent'}) #olx desc
         if desc2:
-            for badword in badwords:
-                if badword in desc2.text:
-                    print("Fordon Found")
-                    return True
-
-
-        return False      
+            if utils.checkForBlacklist(self.blacklist.keywords, desc2.text):
+                return True
 
     def checkforfloor(self, soup):
         overview = soup.find('section', {'class' : 'section-overview'})
@@ -131,16 +123,20 @@ class CrawlerOlx(Crawler):
             floor = -1
             allfloors = -1
             for point in points:
-                if "Piętro: 4" in point.text:
-                    floor = 4
-                if "Liczba pięter: 4" in point.text:
-                    allfloors = 4
-            if floor == 4 and allfloors == 4:
-                print("Last four floor Found")
+                if "Piętro" in point.text:
+                    floor = utils.getfloornumberfromstring(point.text)
+                if "Liczba pięter" in point.text:
+                    allfloors = utils.getfloornumberfromstring(point.text)
+            if floor == allfloors:
+                print("Last floor Found")
                 return True
         return False
 
     def filteroffers(self, offers):
+
+        if self.blacklist.shouldcheck() == False:
+            return offers
+
         filteredoffers = []
 
         idx = 1
@@ -149,11 +145,15 @@ class CrawlerOlx(Crawler):
             idx = idx+1
             soup = soupmaker.makesoup(offer)
 
-            # check for Fordon
-            if self.checkforfordon(soup) :
+            # check for blacklisted locations
+            if self.checkForLocations(soup) :
                 continue     
 
-            # check for last floor (4th)
+            # check for blacklisted keywords
+            if self.checkForKeywords(soup) :
+                continue   
+
+            # check for last floor
             if self.checkforfloor(soup) :
                 continue
 
@@ -163,7 +163,7 @@ class CrawlerOlx(Crawler):
 
     def getoffers(self, onlynew):
 
-        print("Getting offers fro OLX")
+        print("Getting offers from OLX")
 
         cachedoffers = []
 

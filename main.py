@@ -1,25 +1,38 @@
 import os
-from crawlers.crawler_olx import CrawlerOlx
+import json
+import crawlerconstructor
+import resultmaker
+import globs
 
 print("Hello Home Scanner!")
 
-if not os.path.exists("cache"):
+configfile = open("config.json", "r")
+if configfile:
+    config = json.load(configfile)
+
+if not os.path.exists(globs.cachedir):
     print("Creating cache directory")
-    os.makedirs("cache")
+    os.makedirs(globs.cachedir)
 
-crawler = CrawlerOlx()
+if not os.path.exists(globs.resultdir):
+    print("Creating result directory")
+    os.makedirs(globs.resultdir)
 
-crawler.buildtypes = ['blok', 'apartamentowiec']
-crawler.topprice = 380000
-crawler.fromsize = 56
-crawler.floors = [1,2,3,4,5,6]
-crawler.rooms = [3,4]
+for provider in config:
+    crawler = crawlerconstructor.ConstructCrawler(provider)
 
-links = crawler.getoffers(True)
+    if crawler:
+        crawler.buildtypes = config[provider]["buildtypes"]
+        crawler.topprice = config[provider]["topprice"]
+        crawler.fromsize = config[provider]["fromsize"]
+        crawler.floors = config[provider]["floors"]
+        crawler.rooms = config[provider]["rooms"]
 
-file = open("result.html", "w")
-for link in links:
-    file.write('<p><a href="%s">%s</a></p>\n' % (link, link))
-file.close()
+        crawler.blacklist.keywords = config[provider]["blacklist"]["keywords"]
+        crawler.blacklist.locations = config[provider]["blacklist"]["locations"]
+        crawler.blacklist.nolastfloor = config[provider]["blacklist"]["nolastfloor"]
+
+        links = crawler.getoffers(config[provider]["onlynew"])
+        resultmaker.makeResult(links, provider)
 
 print("Scan complete")
