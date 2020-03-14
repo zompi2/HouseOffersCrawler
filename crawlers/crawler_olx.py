@@ -1,3 +1,5 @@
+# Crawle for OLX
+
 from crawlers.crawler import Crawler
 import os
 import utils
@@ -11,9 +13,12 @@ class CrawlerOlx(Crawler):
     lastoffer = ""
     cachefile = os.path.join(globs.cachedir, "olxcache")
 
+    # parse int value to floor id
     def tofloor(self, intvalue):
         return 'floor_' + str(intvalue)
 
+
+    # parse in value to room id
     def toroom(self, intvalue):
         switcher = {
             1:'one',
@@ -25,46 +30,51 @@ class CrawlerOlx(Crawler):
         }
         return switcher.get(intvalue)
 
+
+    # constructs a proper https request for specific filters and page and creates a beautiful soup
+    # which we will read soon.
     def makesoup(self, page):
 
         print("Reading page nr " + str(page))
 
         url = "https://www.olx.pl/nieruchomosci/mieszkania/sprzedaz/bydgoszcz?"
  
-        #typy:
+        #types:
         i = 0
         for buildtype in self.buildtypes:
             url += "search%5Bfilter_enum_builttype%5D%5B"+str(i)+"%5D="+buildtype+"&"
             i+=1
 
-        #cena:
+        #price:
         url += "search%5Bfilter_float_price%3Ato%5D="+str(self.topprice)+"&"
 
-        #powierzchnia:
+        #size:
         url += "search%5Bfilter_float_m%3Afrom%5D="+str(self.fromsize)+"&"
 
-        #poziomy:
+        #floors:
         i = 0
         for floor in self.floors:
             url += "search%5Bfilter_enum_floor_select%5D%5B"+str(i)+"%5D="+self.tofloor(floor)+"&"
             i+=1
 
-        #pokoje:
+        #rooms:
         i = 0
         for room in self.rooms:
             url += "search%5Bfilter_enum_rooms%5D%5B"+str(i)+"%5D="+self.toroom(room)+"&"
             i+=1
 
-        # sortuj od najnowszych
+        # sort by the newest
         url += "search%5Border%5D=created_at%3Adesc&"
 
-        # wybierz strone
+        # select page
         url += "page=" + str(page)
 
         print("Reading URL: " + url)
 
         return soupmaker.makesoup(url)
     
+
+    # get links from the page
     def getlinks(self):
 
         uniquelinks = []
@@ -90,6 +100,7 @@ class CrawlerOlx(Crawler):
         
         return uniquelinks
     
+    # filter if the location contains a blacklisted word
     def checkForLocations(self, soup):
         map = soup.find('a', {'href' : '#map'}) #otodom map
         if map:
@@ -98,24 +109,26 @@ class CrawlerOlx(Crawler):
                     return True
         return False
 
+    # filter if description contains a blacklisted word
     def checkForKeywords(self, soup):
         title = soup.find('div', {'class' : 'offer-titlebox'})
         if title:
             if utils.checkForBlacklist(self.blacklist.keywords, title.text):
                 return True
 
-        desc = soup.find('section', {'class' : 'section-description'}) #otodom desc
+        desc = soup.find('section', {'class' : 'section-description'}) #otodom description
         if desc:
             ps = desc.findAll('p')
             for p in ps:
                 if utils.checkForBlacklist(self.blacklist.keywords, p.text):
                     return True
                         
-        desc2 = soup.find('div', {'id' : 'textContent'}) #olx desc
+        desc2 = soup.find('div', {'id' : 'textContent'}) #olx description
         if desc2:
             if utils.checkForBlacklist(self.blacklist.keywords, desc2.text):
                 return True
 
+    # filter all offers that are on the last floor
     def checkforfloor(self, soup):
         overview = soup.find('section', {'class' : 'section-overview'})
         if overview:
@@ -132,6 +145,7 @@ class CrawlerOlx(Crawler):
                 return True
         return False
 
+    # filter all offers
     def filteroffers(self, offers):
 
         if self.blacklist.shouldcheck() == False:
@@ -161,6 +175,7 @@ class CrawlerOlx(Crawler):
 
         return filteredoffers
 
+    # get offers for this provider
     def getoffers(self, onlynew):
 
         print("Getting offers from OLX")

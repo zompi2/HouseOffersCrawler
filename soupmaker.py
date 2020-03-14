@@ -1,3 +1,7 @@
+# Request a page from url and create a proper soup.
+# It must pass proper user_agent, otherwise no server will
+# trust us.
+
 import urllib.request
 from bs4 import BeautifulSoup
 

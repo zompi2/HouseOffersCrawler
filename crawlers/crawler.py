@@ -1,7 +1,12 @@
+# Base class of a crawler which contains all required data for working crawler.
+
 class Blacklist:
     keywords = []
     locations = []
     nolastfloor = False
+
+    # Checks if there are any blacklist data to check. 
+    # Prevents from making request for offer which can't be rejected.
     def shouldcheck(self):
         if len(self.keywords) > 0:
             return True

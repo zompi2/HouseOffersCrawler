@@ -1,3 +1,5 @@
+# Creates a result from given offers list
+
 import os
 import time
 import globs
