@@ -10,8 +10,8 @@ class CrawlerOlx(Crawler):
     pass
 
     numofpages = -1
-    lastoffer = ""
     cachefile = os.path.join(globs.cachedir, "olxcache")
+    cachedoffers = []
 
     # parse int value to floor id
     def tofloor(self, intvalue):
@@ -86,15 +86,15 @@ class CrawlerOlx(Crawler):
             if self.numofpages == -1:
                 self.numofpages = len(soup.findAll('span', {'class' : 'item fleft'}))
 
-            table = soup.find('table', {'summary': 'Ogłoszenia'})
-            links = table.find_all('a', {'class' : 'detailsLink'})
+            tables = soup.find_all('table', {'class': 'offers'})
+            for table in tables:
+                links = table.find_all('a', {'class' : 'detailsLink'})
 
-            for link in links:
-                href = link['href']
-                if href == self.lastoffer:
-                    return uniquelinks
-                if href not in uniquelinks:
-                    uniquelinks.append(href)
+                for link in links:
+                    href = link['href']
+                    if href not in self.cachedoffers:   
+                        if href not in uniquelinks:
+                            uniquelinks.append(href)
 
             currentpage = currentpage + 1
         
@@ -180,16 +180,11 @@ class CrawlerOlx(Crawler):
 
         print("Getting offers from OLX")
 
-        cachedoffers = []
-
         if onlynew:
             try:
                 file = open(self.cachefile, "r")
-                cachedoffers = file.readlines()
-                if len(cachedoffers) > 0 :
-                    print("Last found offer was: " + cachedoffers[0])
-                    self.lastoffer = cachedoffers[0][:-1]
-                    file.close()
+                self.cachedoffers = file.read().splitlines()
+                file.close()
             except:
                 print("There is no Last offer found")
         else:
@@ -201,8 +196,8 @@ class CrawlerOlx(Crawler):
         
         for offer in alloffers:
             file.write('%s\n' % offer)
-        for offer in cachedoffers:
-             file.write(offer)
+        for offer in self.cachedoffers:
+            file.write('%s\n' % offer)
         file.close()
 
         return self.filteroffers(alloffers)

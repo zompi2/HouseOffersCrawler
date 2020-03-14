@@ -5,7 +5,7 @@ import time
 import globs
 
 def makeResult(offerslist, providername):
-    currenttime = time.strftime("%d.%m.%Y %H:%M:%S")    
+    currenttime = time.strftime("%Y%m%d-%H%M%S")    
     filename = "result-%s-%s.html" % (providername, currenttime)
     filepath = os.path.join(globs.resultdir, filename)
     file = open(filepath, "w")
