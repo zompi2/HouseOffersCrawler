@@ -67,3 +67,5 @@ if rm.hasAnyResult() :
         rm.sendResultToMail(sendmail)
 
 print("Scan complete")
+
+input("Press Enter to continue...")
