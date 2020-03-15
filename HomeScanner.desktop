@@ -1,0 +1,8 @@
+[Desktop Entry]
+Exec=/home/zompi/homescanner/run.sh
+Icon=digikam
+Name=HomeScanner
+Path=/home/zompi/homescanner
+StartupNotify=true
+Terminal=true
+Type=Application
