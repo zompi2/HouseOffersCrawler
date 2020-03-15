@@ -1,16 +1,47 @@
-# Creates a result from given offers list
+# Creates a result from given offers lists
 
 import os
 import time
 import globs
+import mailsender
 
-def makeResult(offerslist, providername):
-    currenttime = time.strftime("%Y%m%d-%H%M%S")    
-    filename = "result-%s-%s.html" % (providername, currenttime)
-    filepath = os.path.join(globs.resultdir, filename)
-    file = open(filepath, "w")
-    
-    file.write('<h1>Offers from <b>%s</b> for <b>%s</b></h1>' % (providername, currenttime))
-    for offer in offerslist:
-        file.write('<p><a href="%s">%s</a></p>\n' % (offer, offer))
-    file.close()
+class ResultEntry:
+    providername = ""
+    offerslist = []
+
+    def __init__(self, inProviername, inOfferslist):
+        self.providername = inProviername
+        self.offerslist = inOfferslist
+
+class ResultMaker:
+
+    results = []
+    textresult = ""
+    timestamp = ""
+    readabletime = ""
+    topic = ""
+
+    def addResult(self, offerslist, providername):
+        self.results.append(ResultEntry(providername, offerslist))
+
+    def makeResult(self):
+        self.timestamp = time.strftime("%Y%m%d%H%M%S")   
+        self.readabletime = time.strftime("%d.%m.%Y - %H:%M:%S")
+
+        self.topic = "Offers from: %s" % self.readabletime
+        self.textresult = '<h1>Offers in <b>%s</b></h1>\n' % self.readabletime
+        for result in self.results:
+            self.textresult += '<h2>%s</h2>\n' % result.providername
+            for offer in result.offerslist:
+                self.textresult += '<p><a href="%s">%s</a></p>\n' % (offer, offer)
+
+    def saveResultToFile(self):
+        filename = "result_%s.html" % self.timestamp
+        filepath = os.path.join(globs.resultdir, filename)
+
+        file = open(filepath, "w")
+        file.write(self.textresult)
+        file.close()
+        
+    def sendResultToMail(self, receivers):
+        mailsender.sendMail(receivers, self.topic, self.textresult)
