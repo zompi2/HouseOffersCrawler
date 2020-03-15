@@ -13,6 +13,9 @@ class ResultEntry:
         self.providername = inProviername
         self.offerslist = inOfferslist
 
+    def hasOffers(self) :
+        return len(self.offerslist) > 0
+
 class ResultMaker:
 
     results = []
@@ -34,6 +37,12 @@ class ResultMaker:
             self.textresult += '<h2>%s</h2>\n' % result.providername
             for offer in result.offerslist:
                 self.textresult += '<p><a href="%s">%s</a></p>\n' % (offer, offer)
+
+    def hasAnyResult(self) :
+        for result in self.results:
+            if result.hasOffers():
+                return True
+        return False
 
     def saveResultToFile(self):
         filename = "result_%s.html" % self.timestamp

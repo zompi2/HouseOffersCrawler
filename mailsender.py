@@ -1,3 +1,5 @@
+# Sends an email with given content
+
 import smtplib
 
 def sendMail(receivers, subject, content) :

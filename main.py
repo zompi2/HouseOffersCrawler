@@ -56,12 +56,14 @@ for provider in config["providers"]:
 # create a result
 rm.makeResult()
 
-# save a result to file
-rm.saveResultToFile()
+# if there are results
+if rm.hasAnyResult() :
+    # save a result to file
+    rm.saveResultToFile()
 
-# send to mail if any address is specified
-sendmail = config["sendmail"]
-if len(sendmail) > 0:
-    rm.sendResultToMail(sendmail)
+    # send to mail if any address is specified
+    sendmail = config["sendmail"]
+    if len(sendmail) > 0:
+        rm.sendResultToMail(sendmail)
 
 print("Scan complete")
